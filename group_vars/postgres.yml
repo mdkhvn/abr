@@ -1,0 +1,3 @@
+postgres_db: mysql_logs
+postgres_user: mysql_logger
+postgres_password: HalfOfbl00d!@

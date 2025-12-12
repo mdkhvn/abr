@@ -1,0 +1,38 @@
+kafka_version: "4.1.1"
+scala_version: "2.13"
+
+kafka_user: kafka
+kafka_group: kafka
+
+kafka_install_dir: /opt/kafka
+kafka_data_dir: /var/lib/kafka
+kafka_log_dir: /var/log/kafka
+
+kafka_listeners:
+  - name: PLAINTEXT
+    port: 9092
+  - name: CONTROLLER
+    port: 9093
+
+kafka_node_id: 1
+
+# Single-node KRaft quorum
+kafka_controller_quorum_voters:
+  - "1@localhost:9093"
+
+kafka_num_partitions: 3
+
+kafka_auto_create_topics: false
+
+kafka_bootstrap_server: "localhost:9092"
+
+kafka_topics:
+  - name: mysql-logs
+    partitions: 3
+    replication_factor: 1
+
+  - name: mysql-errors
+    partitions: 1
+    replication_factor: 1
+
+kafka_topics_delete: []

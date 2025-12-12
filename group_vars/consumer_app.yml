@@ -1,0 +1,9 @@
+consumer_dir: /opt/consumer_app
+
+kafka_bootstrap_servers: "192.168.1.17:9092"
+kafka_topic: mysql-logs
+
+postgres_host: localhost
+postgres_db: mysql_logs
+postgres_user: mysql_logger
+postgres_password: HalfOfbl00d!@

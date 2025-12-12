@@ -1,0 +1,136 @@
+---
+- name: Install Java
+  apt:
+    name: openjdk-17-jre-headless
+    state: present
+  when:
+    - ansible_facts["os_family"] | lower == "debian"
+  tags:
+    - install_kafka
+
+- name: Create kafka user
+  user:
+    name: "{{ kafka_user }}"
+    system: yes
+    shell: /usr/sbin/nologin
+  tags:
+  - install_kafka
+
+- name: Create directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ kafka_user }}"
+    group: "{{ kafka_group }}"
+    mode: "0755"
+  loop:
+    - "{{ kafka_data_dir }}"
+    - "{{ kafka_log_dir }}"
+  tags:
+    - install_kafka
+
+- name: Download Kafka
+  get_url:
+    url: "https://downloads.apache.org/kafka/{{ kafka_version }}/kafka_{{ scala_version }}-{{ kafka_version }}.tgz"
+    dest: /tmp/kafka.tgz
+    mode: "0644"
+  tags:
+    - install_kafka
+
+- name: Extract Kafka
+  unarchive:
+    src: /tmp/kafka.tgz
+    dest: /opt
+    remote_src: yes
+    creates: "/opt/kafka_{{ scala_version }}-{{ kafka_version }}"
+  tags:
+    - install_kafka
+
+- name: Create symlink
+  file:
+    src: "/opt/kafka_{{ scala_version }}-{{ kafka_version }}"
+    dest: "{{ kafka_install_dir }}"
+    state: link
+    owner: "{{ kafka_user }}"
+    group: "{{ kafka_group }}"
+  tags:
+    - install_kafka
+
+- name: Ensure Kafka KRaft config directory exists
+  file:
+    path: "{{ kafka_install_dir }}/config/kraft"
+    state: directory
+    owner: "{{ kafka_user }}"
+    group: "{{ kafka_group }}"
+    mode: "0755"
+  tags:
+    - install_kafka
+
+- name: Deploy server.properties (KRaft)
+  template:
+    src: server.properties.j2
+    dest: "{{ kafka_install_dir }}/config/kraft/server.properties"
+    owner: "{{ kafka_user }}"
+    group: "{{ kafka_group }}"
+    mode: "0644"
+  notify: Restart Kafka
+  tags:
+    - install_kafka
+
+- name: Generate cluster ID (once)
+  command: "{{ kafka_install_dir }}/bin/kafka-storage.sh random-uuid"
+  register: kafka_cluster_uuid
+  changed_when: false
+  tags:
+    - install_kafka
+
+- name: Check if Kafka already formatted
+  stat:
+    path: /var/lib/kafka/logs/meta.properties
+  register: kafka_already_formatted
+
+- name: Format Kafka storage (only if not formatted)
+  command: >
+    {{ kafka_install_dir }}/bin/kafka-storage.sh format
+    -t {{ kafka_cluster_uuid.stdout }}
+    -c {{ kafka_install_dir }}/config/kraft/server.properties
+  args:
+    creates: "{{ kafka_data_dir }}/meta.properties"
+  when: not kafka_already_formatted.stat.exists
+  tags:
+    - install_kafka
+
+- name: Deploy systemd unit
+  template:
+    src: kafka.service.j2
+    dest: /etc/systemd/system/kafka.service
+  notify: Reload systemd
+  tags:
+    - install_kafka
+
+- name: Ensure Kafka data directory ownership
+  file:
+    path: "{{ kafka_data_dir }}"
+    state: directory
+    owner: "{{ kafka_user }}"
+    group: "{{ kafka_group }}"
+    recurse: yes
+  tags:
+    - install_kafka
+
+- name: Enable and start Kafka
+  systemd:
+    name: kafka
+    enabled: yes
+    state: started
+  tags:
+    - install_kafka
+
+- import_tasks: create-topics.yml
+  tags:
+    - create_topics
+
+- import_tasks: delete_topics.yml
+  when: kafka_topics_delete | length > 0
+  tags:
+    - kafka_topics_delete

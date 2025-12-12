@@ -1,0 +1,24 @@
+all:
+  children:
+    mysql:
+      hosts:
+        abrnoc_mysql1:
+    kafka:
+      hosts:
+        abrnoc_kafka1:
+    postgres:
+      hosts:
+        abrnoc_postgres1:
+    consumer_app:
+      hosts:
+        abrnoc_postgres1:
+  hosts:
+    abrnoc_mysql1:
+      # ansible_host: 192.168.38.59
+      ansible_host: 192.168.1.19
+    abrnoc_kafka1:
+      # ansible_host: 192.168.38.63
+      ansible_host: 192.168.1.17
+    abrnoc_postgres1:
+      # ansible_host: 192.168.38.57
+      ansible_host: 192.168.1.16

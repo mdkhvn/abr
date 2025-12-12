@@ -1,0 +1,17 @@
+---
+- name: Install PostgreSQL and acl packages
+  apt:
+    name:
+      - postgresql
+      - python3-psycopg2
+      - acl
+    state: present
+    update_cache: yes
+
+- name: Ensure PostgreSQL is running
+  systemd:
+    name: postgresql
+    state: started
+    enabled: yes
+
+- include_tasks: config.yml

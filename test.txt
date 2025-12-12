@@ -1,0 +1,68 @@
+✅ 4. Full Test Procedure
+
+Now let's verify the entire pipeline.
+
+Test 1 — Produce MySQL Logs
+SELECT NOW();
+SHOW TABLES;
+
+
+Check MySQL log file:
+
+sudo tail -n 20 /var/log/mysql/mysql.log
+
+Test 2 — Rsyslog → Kafka
+
+Check Kafka topic:
+
+sudo /opt/kafka/bin/kafka-console-consumer.sh \
+  --bootstrap-server localhost:9092 \
+  --topic mysql_logs \
+  --from-beginning
+
+
+You should see MySQL log lines.
+
+Test 3 — Kafka → PostgreSQL
+
+Start consumer:
+
+sudo systemctl start mysql-consumer
+
+
+Check PostgreSQL:
+
+SELECT * FROM mysql_logs ORDER BY id DESC LIMIT 20;
+
+
+You should see MySQL queries stored there.
+
+Test 4 — At-Least-Once Delivery
+
+Stop consumer while producing logs:
+
+sudo systemctl stop mysql-consumer
+
+
+Generate MySQL logs:
+
+SELECT SLEEP(1);
+SELECT UUID();
+
+
+Confirm logs are in Kafka but not yet in PostgreSQL:
+
+SELECT count(*) FROM mysql_logs;
+
+
+Start consumer again:
+
+sudo systemctl start mysql-consumer
+
+
+Now check:
+
+SELECT * FROM mysql_logs ORDER BY id DESC LIMIT 20;
+
+
+You should now see all missing logs → with no data loss.

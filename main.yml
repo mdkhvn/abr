@@ -1,0 +1,31 @@
+---
+- hosts: all
+  become: true
+  become_user: khvn
+  roles:
+    - {role: os-update, tags: "update"}
+
+- hosts: mysql
+  become: true
+  # become_user: khvn
+  roles:
+    - {role: mysql, tags: "mysql"}
+    - {role: rsyslog, tags: "rsyslog"}
+
+- hosts: kafka
+  become: true
+  # become_user: khvn
+  roles:
+    - {role: kafka, tags: "install_kafka"}
+    - {role: kafka, tags: "create_topics" }
+
+- hosts: postgres
+  become: true
+  # become_user: khvn
+  roles:
+    - {role: postgres, tags: "postgres"}
+
+- hosts: consumer_app
+  become: true
+  roles:
+    - {role: "consumer_app", tags: "consumer"}

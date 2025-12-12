@@ -1,0 +1,30 @@
+---
+- name: Update APT package cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+  become: true
+  become_user: root
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+
+- name: Upgrade all installed packages
+  apt:
+    upgrade: dist
+  become: true
+  become_user: root
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+
+- name: Remove unused packages
+  apt:
+    autoremove: yes
+    purge: yes
+  become: true
+  become_user: root
+
+- name: Clean APT cache
+  apt:
+    autoclean: yes
+  become: true
+  become_user: root

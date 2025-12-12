@@ -1,0 +1,47 @@
+---
+- name: Ensure consumer app directory exists
+  file:
+    path: "{{ consumer_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Install python venv support
+  become: yes
+  apt:
+    name: python3.12-venv
+    state: present
+    update_cache: yes
+
+- name: Create Python virtual environment
+  become: yes
+  command: python3 -m venv "{{ consumer_dir }}/venv"
+  args:
+    creates: "{{ consumer_dir }}/venv/bin/activate"
+
+- name: Install Python libraries in venv
+  command: "{{ consumer_dir }}/venv/bin/pip install kafka-python psycopg2-binary"
+  environment:
+    PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+- name: Deploy consumer script
+  copy:
+    src: consumer.py
+    dest: "{{ consumer_dir }}/consumer.py"
+    mode: '0755'
+
+- name: Deploy systemd service
+  template:
+    src: mysql-log-consumer.service.j2
+    dest: /etc/systemd/system/mysql-log-consumer.service
+
+- name: Reload systemd
+  systemd:
+    daemon_reload: yes
+
+- name: Enable and start consumer
+  systemd:
+    name: mysql-log-consumer
+    enabled: yes
+    state: started

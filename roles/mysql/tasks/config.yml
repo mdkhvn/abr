@@ -1,0 +1,49 @@
+---
+- name: Deploy MySQL log configuration
+  copy:
+    dest: /etc/mysql/conf.d/mysql-logging.cnf
+    content: |
+      [mysqld]
+      general_log = ON
+      general_log_file = /var/log/mysql/general.log
+      log_error = /var/log/mysql/error.log
+  notify:
+    - Restart MySQL
+
+- name: MySQL log rotate
+  copy:
+    src: mysql-logs
+    dest: /etc/logrotate.d/mysql-logs
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - Restart MySQL
+
+- name: Create MySQL log file with correct permission
+  file:
+    path: "{{ item }}"
+    owner: mysql
+    group: adm
+    mode: "0750"
+  loop:
+    - /var/log/mysql/general.log
+    - /var/log/mysql/error.log
+  register: first_fix
+  ignore_errors: true
+
+- name: Restart MySQL to create missing log files
+  systemd:
+    name: mysql
+    state: restarted
+  when: first_fix.changed
+
+- name: Ensure MySQL log permissions (final)
+  file:
+    path: "{{ item }}"
+    owner: mysql
+    group: adm
+    mode: "0640"
+  loop:
+    - /var/log/mysql/general.log
+    - /var/log/mysql/error.log

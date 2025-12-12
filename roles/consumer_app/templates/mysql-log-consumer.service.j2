@@ -1,0 +1,14 @@
+[Unit]
+Description=MySQL Log Consumer (Kafka → PostgreSQL)
+After=network-online.target
+
+[Service]
+User=postgres
+Group=postgres
+WorkingDirectory={{ consumer_dir }}
+ExecStart={{ consumer_dir }}/venv/bin/python {{ consumer_dir }}/consumer.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

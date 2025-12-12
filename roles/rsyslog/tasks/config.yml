@@ -1,0 +1,7 @@
+---
+- name: Deploy rsyslog configuration for mysql
+  copy:
+    src: 30-mysql-kafka.conf
+    dest: /etc/rsyslog.d/30-mysql-kafka.conf
+  notify:
+    - Restart rsyslog

@@ -1,0 +1,12 @@
+---
+- name: Install mysql-server
+  apt:
+    name:
+      - mysql-server
+    state: present
+  become: true
+  become_user: root
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+  when: 
+    - ansible_facts["os_family"] | lower == "debian"

@@ -1,0 +1,33 @@
+---
+- name: Create database
+  become: yes
+  become_user: postgres
+  become_method: sudo
+  postgresql_db:
+    name: "{{ postgres_db }}"
+
+- name: Create PostgreSQL user
+  become: yes
+  become_user: postgres
+  postgresql_user:
+    name: "{{ postgres_user }}"
+    password: "{{ postgres_password }}"
+    encrypted: yes
+    role_attr_flags: LOGIN
+
+- name: Grant ALL privileges on database
+  become: yes
+  become_user: postgres
+  postgresql_privs:
+    database: "{{ postgres_db }}"
+    roles: "{{ postgres_user }}"
+    type: database
+    privs: ALL
+    state: present
+
+- name: Create tables
+  become: yes
+  become_user: postgres
+  postgresql_query:
+    db: "{{ postgres_db }}"
+    query: "{{ lookup('file', 'create_mysql_logs.sql') }}"

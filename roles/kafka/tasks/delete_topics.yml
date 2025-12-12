@@ -1,0 +1,15 @@
+---
+- name: Delete Kafka topics (EXPLICIT)
+  command: >
+    {{ kafka_install_dir }}/bin/kafka-topics.sh
+    --bootstrap-server {{ kafka_bootstrap_server }}
+    --delete
+    --topic {{ item }}
+  loop: "{{ kafka_topics_delete }}"
+  register: kafka_topic_delete
+  changed_when: "'marked for deletion' in kafka_topic_delete.stdout"
+  failed_when:
+    - kafka_topic_delete.rc != 0
+    - "'UnknownTopicOrPartitionException' not in kafka_topic_delete.stderr"
+  tags:
+    - kafka_topics_delete
