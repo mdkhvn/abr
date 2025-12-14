@@ -1,0 +1,30 @@
+- name: Check if AppArmor service exists
+  ansible.builtin.stat:
+    path: /usr/lib/systemd/system/apparmor.service
+  register: apparmor_unit
+
+- name: Stop AppArmor (if disabled)
+  ansible.builtin.systemd:
+    name: apparmor
+    state: stopped
+    enabled: false
+    masked: true
+  when:
+    - disable_apparmor | default(false)
+    - apparmor_unit.stat.exists
+
+- name: Disable AppArmor at boot (if disabled)
+  ansible.builtin.systemd:
+    name: apparmor
+    enabled: false
+  when: 
+    - disable_apparmor | default(false)
+    - apparmor_unit.stat.exists
+
+- name: Mask AppArmor (if disabled)
+  ansible.builtin.systemd:
+    name: apparmor
+    masked: true
+  when: 
+    - disable_apparmor | default(false)
+    - apparmor_unit.stat.exists

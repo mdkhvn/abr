@@ -1,0 +1,12 @@
+- name: Ensure /etc/hosts entries exist
+  ansible.builtin.blockinfile:
+    path: /etc/hosts
+    create: yes
+    marker: "# {mark} ANSIBLE MANAGED HOSTS"
+    block: |
+      {% for entry in hosts_entries %}
+      {{ entry.ip }} {{ entry.names | join(' ') }}
+      {% endfor %}
+  become: yes
+  become_user: root
+  when: hosts_entries is defined

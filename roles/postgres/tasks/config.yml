@@ -1,11 +1,4 @@
 ---
-- name: Create database
-  become: yes
-  become_user: postgres
-  become_method: sudo
-  postgresql_db:
-    name: "{{ postgres_db }}"
-
 - name: Create PostgreSQL user
   become: yes
   become_user: postgres
@@ -13,17 +6,14 @@
     name: "{{ postgres_user }}"
     password: "{{ postgres_password }}"
     encrypted: yes
-    role_attr_flags: LOGIN
+    role_attr_flags: LOGIN,CREATEDB
 
-- name: Grant ALL privileges on database
+- name: Create database
   become: yes
   become_user: postgres
-  postgresql_privs:
-    database: "{{ postgres_db }}"
-    roles: "{{ postgres_user }}"
-    type: database
-    privs: ALL
-    state: present
+  postgresql_db:
+    db: "{{ postgres_db }}"
+    owner: "{{ postgres_user }}"
 
 - name: Create tables
   become: yes
@@ -31,3 +21,15 @@
   postgresql_query:
     db: "{{ postgres_db }}"
     query: "{{ lookup('file', 'create_mysql_logs.sql') }}"
+
+- name: Grant default privileges on all sequences in public schema
+  become: yes
+  become_user: postgres
+  postgresql_privs:
+    db: "{{ postgres_db }}"
+    roles: "{{ postgres_user }}"
+    type: sequence
+    objs: ALL_IN_SCHEMA
+    schema: public
+    privs: USAGE,SELECT,UPDATE
+  when: postgres_user is defined and postgres_db is defined

@@ -4,20 +4,20 @@
   become_user: khvn
   roles:
     - {role: os-update, tags: "update"}
-
+    - {role: hosts, tags: "hosts"}
 - hosts: mysql
   become: true
   # become_user: khvn
   roles:
     - {role: mysql, tags: "mysql"}
     - {role: rsyslog, tags: "rsyslog"}
+    - {role: apparmor, tags: "apparmor"}
 
 - hosts: kafka
   become: true
   # become_user: khvn
   roles:
     - {role: kafka, tags: "install_kafka"}
-    - {role: kafka, tags: "create_topics" }
 
 - hosts: postgres
   become: true

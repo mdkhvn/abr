@@ -1,68 +1,54 @@
-✅ 4. Full Test Procedure
-
-Now let's verify the entire pipeline.
+Full Test Procedure
 
 Test 1 — Produce MySQL Logs
 SELECT NOW();
 SHOW TABLES;
-
+SELECT SLEEP(1);
+SELECT UUID();
 
 Check MySQL log file:
-
 sudo tail -n 20 /var/log/mysql/mysql.log
+
+##################################################
 
 Test 2 — Rsyslog → Kafka
 
 Check Kafka topic:
-
-sudo /opt/kafka/bin/kafka-console-consumer.sh \
+/opt/kafka/bin/kafka-console-consumer.sh \
   --bootstrap-server localhost:9092 \
-  --topic mysql_logs \
+  --topic mysql-errors \
   --from-beginning
 
-
 You should see MySQL log lines.
+
+##################################################
 
 Test 3 — Kafka → PostgreSQL
 
 Start consumer:
+sudo systemctl status mysql-log-consumer.service
 
-sudo systemctl start mysql-consumer
+You should see something like this:
+
+● mysql-log-consumer.service - MySQL Log Consumer (Kafka → PostgreSQL)
+     Loaded: loaded (/etc/systemd/system/mysql-log-consumer.service; enabled; preset: enabled)
+     Active: active (running) since Sat 2025-12-13 23:53:12 UTC; 24min ago
+   Main PID: 9446 (python)
+      Tasks: 1 (limit: 4602)
+     Memory: 16.1M (peak: 16.6M)
+        CPU: 3.160s
+     CGroup: /system.slice/mysql-log-consumer.service
+             └─9446 /opt/consumer_app/venv/bin/python /opt/consumer_app/consumer.py
+
+Dec 13 23:53:12 postgres systemd[1]: Started mysql-log-consumer.service - MySQL Log Consumer (Kafka → PostgreSQL).
 
 
 Check PostgreSQL:
 
-SELECT * FROM mysql_logs ORDER BY id DESC LIMIT 20;
+First login to database:
+psql -h localhost -U mysql_logger -d mysql_logs
 
+Then run bellow query
+SELECT * FROM mysql_logs ORDER BY id DESC LIMIT 20;
 
 You should see MySQL queries stored there.
-
-Test 4 — At-Least-Once Delivery
-
-Stop consumer while producing logs:
-
-sudo systemctl stop mysql-consumer
-
-
-Generate MySQL logs:
-
-SELECT SLEEP(1);
-SELECT UUID();
-
-
-Confirm logs are in Kafka but not yet in PostgreSQL:
-
-SELECT count(*) FROM mysql_logs;
-
-
-Start consumer again:
-
-sudo systemctl start mysql-consumer
-
-
-Now check:
-
-SELECT * FROM mysql_logs ORDER BY id DESC LIMIT 20;
-
-
-You should now see all missing logs → with no data loss.

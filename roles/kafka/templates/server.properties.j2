@@ -8,12 +8,16 @@ node.id={{ kafka_node_id }}
 controller.listener.names=CONTROLLER
 
 listeners={% for l in kafka_listeners %}
-{{ l.name }}://:{{ l.port }}{% if not loop.last %},{% endif %}
+{{ l.name }}://{{l.address}}:{{ l.port }}{% if not loop.last %},{% endif %}
 {% endfor %}
 
 listener.security.protocol.map=PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
 
 inter.broker.listener.name=PLAINTEXT
+
+advertised.listeners={% for l in kafka_advertised_listener %}
+{{l.name}}://{{l.address}}:{{l.port}}{% if not loop.last %},{% endif %}
+{% endfor %}
 
 controller.quorum.voters={{ kafka_controller_quorum_voters | join(",") }}
 
